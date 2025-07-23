@@ -6,13 +6,21 @@ public class PlayerController : MonoBehaviour
     Rigidbody2D rb;
     float horizontalMovement;
     public bool facingRight = true;
-    public bool wallSliding;
     public bool walled;
 
-    [Header("Values")]
+    [Header("Movement")]
     [SerializeField] float jumpForce;
     [SerializeField] float movementSpeed;
+
+    [Header("Wall movement")]
     [SerializeField] float wallSlideSpeed;
+    public bool wallSliding;
+
+    public bool isWallJumping;
+    float wallJumpDirection;
+    float wallJumpTime = 0.5f;
+    float wallJumpTimer;
+    [SerializeField] Vector2 wallJumpPower = new Vector2(5, 10);
 
     [Header("Ground check")]
     [SerializeField] Transform groundCheckTransform;
@@ -34,14 +42,18 @@ public class PlayerController : MonoBehaviour
     {
         Flip();
         WallSlide();
-
-        walled = isWalled();
+        ProcessWallJump();
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
-        rb.linearVelocity = new Vector2(horizontalMovement * movementSpeed, rb.linearVelocity.y);
+        walled = isWalled();
+
+        if (!isWallJumping)
+        {
+            rb.linearVelocity = new Vector2(horizontalMovement * movementSpeed, rb.linearVelocity.y);
+        }
     }
 
     public void Move(InputAction.CallbackContext context)
@@ -55,6 +67,16 @@ public class PlayerController : MonoBehaviour
         {
             rb.AddForce(new Vector2(rb.linearVelocity.x, jumpForce));
         }
+
+        //wall jump
+        if(context.performed && wallJumpTimer > 0 && !isGrounded() && isWalled())
+        {
+            isWallJumping = true;
+            rb.AddForce(new Vector2(wallJumpDirection * wallJumpPower.x, wallJumpPower.y));
+            wallJumpTimer = 0;
+
+            Invoke(nameof(CancelWallJump), wallJumpTime + 0.1f);
+        }
     }
 
     private bool isGrounded()
@@ -63,7 +85,7 @@ public class PlayerController : MonoBehaviour
     }
     private bool isWalled()
     {
-        return Physics2D.OverlapBox(wallCheckTransform.position, wallCheckSize, wallLayer);
+        return Physics2D.OverlapBox(wallCheckTransform.position, wallCheckSize, 0,  wallLayer);
     }
 
     void WallSlide()
@@ -79,9 +101,30 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    void ProcessWallJump()
+    {
+        if (wallSliding)
+        {
+            isWallJumping = false;
+            wallJumpDirection = -transform.localScale.x;
+            wallJumpTimer = wallJumpTime;
+
+            CancelInvoke(nameof(CancelWallJump));
+        }
+        else if (wallJumpTimer > 0)
+        {
+            wallJumpTimer -= Time.deltaTime;
+        }
+    }
+
+    void CancelWallJump()
+    {
+        isWallJumping = false;
+    }
+
     void Flip()
     {
-        /*if (rb.linearVelocity.x < -0.1f)
+        if (rb.linearVelocity.x < -0.1f)
         {
             facingRight = false;
         }
@@ -97,14 +140,14 @@ public class PlayerController : MonoBehaviour
         else if (!facingRight)
         {
             wallCheckTransform.position = new Vector3(transform.position.x + -0.52f, transform.position.y, 0);
-        }*/
-        if(facingRight && horizontalMovement < 0 || !facingRight && horizontalMovement > 0)
+        }
+        /*if(facingRight && horizontalMovement < 0 || !facingRight && horizontalMovement > 0)
         {
             facingRight = !facingRight;
             Vector3 ls = transform.localScale;
             ls.x *= -1f;
             transform.localScale = ls;
-        }
+        }*/
     }
 
     private void OnDrawGizmos()
