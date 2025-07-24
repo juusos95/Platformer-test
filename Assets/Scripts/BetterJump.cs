@@ -28,7 +28,7 @@ public class BetterJump : MonoBehaviour
         {
             //rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
             rb.gravityScale = baseGravity * fallMultiplier;
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Max(rb.linearVelocity.y, -maxFallSpeed));
+            //rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Max(rb.linearVelocity.y, -maxFallSpeed));
         }
         else if (rb.linearVelocity.y > 0 && !jumpPressed)
         {
